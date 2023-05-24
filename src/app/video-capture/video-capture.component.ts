@@ -10,41 +10,61 @@ import { VideoConnectService } from '../service/video-connect.service';
 export class VideoCaptureComponent implements OnInit {
   @ViewChild('videoElement', { static: true }) videoElement: ElementRef;
   videoStream: MediaStream;
-  canvasElement: HTMLCanvasElement;
+  capturing: boolean = false;
+  frameInterval: any;
 
   constructor(private service: VideoConnectService) { } 
   
   ngOnInit(): void {
-    this.canvasElement = document.createElement('canvas');
+    // this.startCapture();
+    this.videoElement.nativeElement.style.display = 'block';
+  }
+
+  startCapture(): void {
+    this.videoElement.nativeElement.style.display = 'block';
+    this.capturing = true;
     navigator.mediaDevices.getUserMedia({ video: true })
       .then((stream: MediaStream) => {
         this.videoStream = stream;
         this.videoElement.nativeElement.srcObject = stream;
-        this.captureFrames();
+        this.capturing = true;
+        this.frameInterval = setInterval(() => this.captureFrame(), 1000 / 30);
       })
       .catch((error) => {
         console.error('Error accessing video stream:', error);
       });
   }
 
-  captureFrames(): void {
-    const canvas = this.canvasElement;
-    const context = canvas.getContext('2d');
+  stopCapture(): void {
+    // this.videoElement.nativeElement.style.display = 'none';
+    this.capturing = false;
+    if (this.frameInterval) {
+      clearInterval(this.frameInterval);
+    }
+    if (this.videoStream) {
+      this.videoStream.getTracks().forEach(track => track.stop());
+    }
+  }
 
-    setInterval(() => {
-      context.drawImage(this.videoElement.nativeElement, 0, 0, canvas.width, canvas.height);
-      const imageData = canvas.toDataURL('image/jpeg');
-      this.postDataFunction(imageData);
-    }, 1000 / 30);
+  captureFrame(): void {
+    const canvas = document.createElement('canvas');
+    const context = canvas.getContext('2d');
+    const video = this.videoElement.nativeElement;
+
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    context.drawImage(video, 0, 0, canvas.width, canvas.height);
+    const imageData = canvas.toDataURL('image/jpeg');
+    this.postDataFunction(imageData);
   }
 
   postDataFunction(imageData: String): void{
     this.service.postDataToFlask(imageData).subscribe( 
-      data => {
-        console.log(data);
+      (response) => {
+        console.log(response);
       },
-      error=> {
-        console.log("unable to fetch data cluster",error);
+      (error) => {
+        console.error('Error sending frame to Flask:', error);
       }
     );
   }
