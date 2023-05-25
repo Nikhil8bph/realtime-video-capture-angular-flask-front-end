@@ -12,7 +12,7 @@ export class VideoConnectService {
   private VISNAVE_URL = environment.scrumAppUrl;
 
   postDataToFlask(imageData: String) {
-    return this.http.post(this.VISNAVE_URL+"process_frame",{ frame: imageData });
+    return this.http.post(this.VISNAVE_URL+"process_frame",imageData);
   }
   
 }

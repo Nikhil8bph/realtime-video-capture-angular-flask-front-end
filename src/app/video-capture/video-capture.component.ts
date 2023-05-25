@@ -28,7 +28,7 @@ export class VideoCaptureComponent implements OnInit {
         this.videoStream = stream;
         this.videoElement.nativeElement.srcObject = stream;
         this.capturing = true;
-        this.frameInterval = setInterval(() => this.captureFrame(), 1000 / 30);
+        this.frameInterval = setInterval(() => this.captureFrame(), 1000 / 1000);
       })
       .catch((error) => {
         console.error('Error accessing video stream:', error);
